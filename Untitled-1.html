@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Tracker - Athenify Clone</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; text-align: center; padding: 20px; }
+        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); max-width: 600px; margin: auto; }
+        h1 { color: #333; }
+        button { padding: 10px 20px; margin: 10px; font-size: 1em; cursor: pointer; border: none; border-radius: 5px; }
+        .start { background: green; color: white; }
+        .stop { background: red; color: white; }
+        .reset { background: gray; color: white; }
+        input, select { padding: 10px; margin: 10px; border-radius: 5px; border: 1px solid #ccc; }
+        progress { width: 100%; height: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Study Tracker</h1>
+        <input type="text" id="task-name" placeholder="Enter Task Name">
+        <div id="date-time"></div>
+        <div id="timer">00:00:00</div>
+        <button class="start" onclick="startTimer()">Start</button>
+        <button class="stop" onclick="stopTimer()">Stop</button>
+        <button class="reset" onclick="resetTimer()">Reset</button>
+        <h2>Daily Study Progress</h2>
+        <progress id="progress-bar" value="0" max="3600"></progress>
+        <ul id="study-log"></ul>
+    </div>
+    <script>
+        let timer;
+        let totalSeconds = 0;
+        let running = false;
+        let today = new Date().toISOString().split('T')[0];
+        document.getElementById('date-time').textContent = new Date().toLocaleString();
+        
+        function updateTimerDisplay() {
+            let hours = Math.floor(totalSeconds / 3600);
+            let minutes = Math.floor((totalSeconds % 3600) / 60);
+            let seconds = totalSeconds % 60;
+            document.getElementById('timer').textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            document.getElementById('progress-bar').value = totalSeconds;
+        }
+        
+        function startTimer() {
+            if (!running) {
+                running = true;
+                timer = setInterval(() => {
+                    totalSeconds++;
+                    updateTimerDisplay();
+                }, 1000);
+            }
+        }
+        
+        function stopTimer() {
+            if (running) {
+                running = false;
+                clearInterval(timer);
+                saveStudyTime();
+            }
+        }
+        
+        function resetTimer() {
+            stopTimer();
+            totalSeconds = 0;
+            updateTimerDisplay();
+        }
+
+        function saveStudyTime() {
+            let taskName = document.getElementById('task-name').value || 'Unnamed Task';
+            let storedData = JSON.parse(localStorage.getItem('studyData')) || {};
+            storedData[today] = storedData[today] || [];
+            storedData[today].push({ task: taskName, time: totalSeconds });
+            localStorage.setItem('studyData', JSON.stringify(storedData));
+            loadStudyLog();
+        }
+        
+        function loadStudyLog() {
+            let storedData = JSON.parse(localStorage.getItem('studyData')) || {};
+            let logContainer = document.getElementById('study-log');
+            logContainer.innerHTML = '';
+            if (storedData[today]) {
+                storedData[today].forEach(entry => {
+                    let hours = Math.floor(entry.time / 3600);
+                    let minutes = Math.floor((entry.time % 3600) / 60);
+                    let seconds = entry.time % 60;
+                    let listItem = document.createElement('li');
+                    listItem.textContent = `${today} - ${entry.task}: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                    logContainer.appendChild(listItem);
+                });
+            }
+        }
+        
+        window.onload = function() {
+            loadStudyLog();
+        }
+    </script>
+</body>
+</html>
